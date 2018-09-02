@@ -12,6 +12,8 @@ import (
 	"strings"
 	"syscall" // only for Errno
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 
@@ -83,6 +85,13 @@ func EnableKernelMemoryAccounting(path string) error {
 func setKernelMemory(path string, kernelMemoryLimit int64) error {
 	if path == "" {
 		return fmt.Errorf("no such directory for %s", cgroupKernelMemoryLimit)
+	}
+	disableKernelMemoryLimit := os.Getenv("RUNC_DISABLE_KERNEL_MEMORY_LIMIT") != ""
+	if disableKernelMemoryLimit {
+		// kernel memory is disabled through an environment variable so
+		// we should do nothing
+		logrus.Debug("Kernel memory limits disabled through RUNC_DISABLE_KERNEL_MEMORY_LIMIT")
+		return nil
 	}
 	if !cgroups.PathExists(filepath.Join(path, cgroupKernelMemoryLimit)) {
 		// kernel memory is not enabled on the system so we should do nothing
